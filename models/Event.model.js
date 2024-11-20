@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// Define the Event Schema
 const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   category: { type: String, required: true },
@@ -12,5 +11,4 @@ const EventSchema = new mongoose.Schema({
   image: { type: String, default: "" },
 });
 
-// Export the model based on the schema
 module.exports = mongoose.model("Event", EventSchema);

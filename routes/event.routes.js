@@ -3,9 +3,25 @@ const Event = require("../models/Event.model");
 
 // CREATE EVENT - POST /api/events
 router.post("/", (req, res, next) => {
-  const { title, description, category, date, location, price, availableTickets } = req.body;
+  const {
+    title,
+    description,
+    category,
+    date,
+    location,
+    price,
+    availableTickets,
+  } = req.body;
 
-  Event.create({ title, description, category, date, location, price, availableTickets })
+  Event.create({
+    title,
+    description,
+    category,
+    date,
+    location,
+    price,
+    availableTickets,
+  })
     .then((eventFromDB) => {
       res.status(201).json(eventFromDB);
     })
