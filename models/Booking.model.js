@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+const Event = require('../models/Event.model')
 // Define the Booking Schema
 const BookingSchema = new mongoose.Schema({
     userId: {
@@ -31,10 +31,12 @@ const BookingSchema = new mongoose.Schema({
 // Pre-save hook to calculate totalPrice before saving
 BookingSchema.pre('save', async function(next) {
     try {
-        const event = await mongoose.model('Event').findById(this.eventId);
-        if (event) {
-            this.totalPrice = event.price * this.quantity; // Calculate totalPrice
+        const event = await Event.findById(this.eventId);
+        if (!event) {
+            return next(new Error("Event not found"));
         }
+        
+        this.totalPrice = event.price * this.quantity;
         next();
     } catch (err) {
         next(err);

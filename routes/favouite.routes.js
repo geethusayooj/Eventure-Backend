@@ -3,7 +3,7 @@ const Favorite = require("../models/Favourite.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 // CREATE FAVORITE - POST /api/favorites
-router.post("/favorites", isAuthenticated, (req, res, next) => {
+router.post("/", isAuthenticated, (req, res, next) => {
   const { userId, eventId } = req.body;
 
   Favorite.create({ userId, eventId })
@@ -17,7 +17,7 @@ router.post("/favorites", isAuthenticated, (req, res, next) => {
 });
 
 // GET ALL FAVORITES - GET /api/favorites
-router.get("/favorites", isAuthenticated, (req, res, next) => {
+router.get("/", isAuthenticated, (req, res, next) => {
   Favorite.find()
     .then((favoritesFromDB) => {
       res.status(200).json(favoritesFromDB);
@@ -29,7 +29,7 @@ router.get("/favorites", isAuthenticated, (req, res, next) => {
 });
 
 // DELETE FAVORITE - DELETE /api/favorites
-router.delete("/favorites", isAuthenticated, (req, res, next) => {
+router.delete("/", isAuthenticated, (req, res, next) => {
   const { userId, eventId } = req.body;
 
   Favorite.findOneAndDelete({ userId, eventId })

@@ -1,21 +1,34 @@
 const router = require("express").Router();
 const Booking = require("../models/Booking.model");
+const Event = require("../models/Event.model")
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 // CREATE BOOKING - POST /api/bookings
 router.post("/", isAuthenticated, (req, res, next) => {
   const { userId, eventId, quantity } = req.body;
+ 
+  Event.findById(eventId)
+  .then((event) => {
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
 
-  Booking.create({ userId, eventId, quantity })
-    .then((bookingFromDB) => {
-      res.status(201).json(bookingFromDB);
-    })
-    .catch((error) => {
-      next(error);
-      res.status(500).json({ error: "Failed to create booking" });
-    });
+    // Check if enough tickets are available
+    if (event.availableTickets < quantity) {
+      return res.status(400).json({ error: "Not enough tickets available" });
+    }
+
+    // Create the booking (totalPrice is automatically calculated due to pre-save hook in Booking model)
+    return Booking.create({ userId, eventId, quantity });
+  })
+  .then((bookingFromDB) => {
+    res.status(201).json(bookingFromDB);
+  })
+  .catch((error) => {
+    next(error);
+    res.status(500).json({ error: "Failed to create booking" });
+  });
 });
-
 // GET ALL BOOKINGS - GET /api/bookings
 router.get("/", isAuthenticated, (req, res, next) => {
   Booking.find()
@@ -47,7 +60,33 @@ router.put("/:bookingId", isAuthenticated, (req, res, next) => {
   const { bookingId } = req.params;
   const { quantity } = req.body;
 
-  Booking.findByIdAndUpdate(bookingId, { quantity }, { new: true })
+  // Check if the booking exists first
+  Booking.findById(bookingId)
+    .then((booking) => {
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      // Find the event to validate the updated quantity
+      return Event.findById(booking.eventId);
+    })
+    .then((event) => {
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Check if enough tickets are available for the new quantity
+      if (event.availableTickets < quantity) {
+        return res.status(400).json({ error: "Not enough tickets available" });
+      }
+
+      // Update the booking quantity and totalPrice
+      return Booking.findByIdAndUpdate(
+        bookingId,
+        { quantity, totalPrice: event.price * quantity },
+        { new: true }
+      );
+    })
     .then((updatedBooking) => {
       res.status(200).json(updatedBooking);
     })
