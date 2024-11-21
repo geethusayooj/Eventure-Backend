@@ -43,6 +43,27 @@ router.get("/", (req, res, next) => {
     });
 });
 
+// GET ALL EVENTS OR FILTER BY CATEGORY - GET /api/events
+router.get("/:category", (req, res, next) => {
+  const { category } = req.params; // Retrieve category from query parameter
+  console.log(category)
+  const filter = category ? { category } : {}; // If category is provided, apply the filter
+  console.log(filter)
+  // Apply filter to Event model
+  Event.find(filter)
+    .then((eventsFromDB) => {
+      res.status(200).json(eventsFromDB); // Return the filtered events
+    })
+    .catch((error) => {
+      console.error("Error fetching events:", error);
+      next(error);
+      res.status(500).json({ error: "Failed to get events" });
+    });
+});
+
+
+
+
 // GET EVENT BY ID - GET /api/events/:eventId
 router.get("/:eventId", (req, res, next) => {
   const { eventId } = req.params;
@@ -56,6 +77,7 @@ router.get("/:eventId", (req, res, next) => {
       res.status(500).json({ error: "Failed to get event details" });
     });
 });
+
 
 // UPDATE EVENT - PUT /api/events/:eventId
 router.put("/:eventId", (req, res, next) => {
