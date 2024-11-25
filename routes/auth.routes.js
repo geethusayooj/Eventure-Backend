@@ -128,4 +128,32 @@ router.get("/verify", isAuthenticated, (req, res, next) => {
   res.status(200).json(req.payload);
 });
 
+router.post("/favourites", isAuthenticated, (req, res, next) => {
+  const { eventId } = req.body;
+  const userId = req.payload._id; // Get the userId from the authenticated user
+
+  // Check if the eventId is provided
+  if (!eventId) {
+    return res.status(400).json({ error: "Event ID is required." });
+  }
+// Find the user and add the eventId to the favorites array
+User.findByIdAndUpdate(
+  userId,
+  { $addToSet: { favorites: eventId } }, // Add eventId to favorites without duplicates
+  { new: true }  // Return the updated user document
+)
+  .then((updatedUser) => {
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    // Send the updated user object as a response
+    res.status(200).json(updatedUser);
+  })
+  .catch((error) => {
+    console.error("Error adding event to favorites:", error);
+    next(error);  // Pass the error to the error-handling middleware
+  });
+});
+
+
 module.exports = router;

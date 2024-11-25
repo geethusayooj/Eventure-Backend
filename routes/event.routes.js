@@ -8,6 +8,7 @@ router.post("/", (req, res, next) => {
     description,
     category,
     date,
+    image,
     location,
     price,
     availableTickets,
@@ -18,6 +19,7 @@ router.post("/", (req, res, next) => {
     description,
     category,
     date,
+    image,
     location,
     price,
     availableTickets,
@@ -43,23 +45,6 @@ router.get("/", (req, res, next) => {
     });
 });
 
-// GET ALL EVENTS OR FILTER BY CATEGORY - GET /api/events
-router.get("/:category", (req, res, next) => {
-  const { category } = req.params; // Retrieve category from query parameter
-  console.log(category)
-  const filter = category ? { category } : {}; // If category is provided, apply the filter
-  console.log(filter)
-  // Apply filter to Event model
-  Event.find(filter)
-    .then((eventsFromDB) => {
-      res.status(200).json(eventsFromDB); // Return the filtered events
-    })
-    .catch((error) => {
-      console.error("Error fetching events:", error);
-      next(error);
-      res.status(500).json({ error: "Failed to get events" });
-    });
-});
 
 
 
@@ -68,13 +53,12 @@ router.get("/:category", (req, res, next) => {
 router.get("/:eventId", (req, res, next) => {
   const { eventId } = req.params;
 
-  Event.findById(eventId)
+  Event.findById(eventId)  // Using the eventId to fetch the event
     .then((eventFromDB) => {
       res.status(200).json(eventFromDB);
     })
     .catch((error) => {
       next(error);
-      res.status(500).json({ error: "Failed to get event details" });
     });
 });
 
@@ -83,17 +67,25 @@ router.get("/:eventId", (req, res, next) => {
 router.put("/:eventId", (req, res, next) => {
   const { eventId } = req.params;
   const updatedDetails = req.body;
-
-  Event.findByIdAndUpdate(eventId, updatedDetails, { new: true })
+  if (updatedDetails.availableTickets < 0) {
+    return res.status(400).json({ error: "Tickets cannot be negative." });
+  }
+  Event.findByIdAndUpdate(
+    eventId, 
+    updatedDetails, 
+    { new: true }  
+  )
     .then((updatedEvent) => {
-      res.status(200).json(updatedEvent);
+      if (!updatedEvent) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      res.status(200).json(updatedEvent); 
     })
     .catch((error) => {
-      next(error);
-      res.status(500).json({ error: "Failed to update event" });
+      console.error("Error updating event:", error);
+      next(error); 
     });
 });
-
 // DELETE EVENT - DELETE /api/events/:eventId
 router.delete("/:eventId", (req, res, next) => {
   const { eventId } = req.params;
@@ -108,4 +100,26 @@ router.delete("/:eventId", (req, res, next) => {
     });
 });
 
+
+// GET ALL EVENTS OR FILTER BY CATEGORY - GET /api/category/:category
+router.get("/category/:category", (req, res, next) => {
+  const { category } = req.params; 
+  console.log(category)
+  const filter = category ? { category } : {}; 
+  console.log(filter)
+  
+  Event.find(filter)
+    .then((eventsFromDB) => {
+      res.status(200).json(eventsFromDB); 
+    })
+    .catch((error) => {
+      console.error("Error fetching events:", error);
+      next(error);
+      res.status(500).json({ error: "Failed to get events" });
+    });
+});
+
+
+
 module.exports = router;
+

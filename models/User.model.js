@@ -18,6 +18,13 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Name is required."],
     },
+    favorites: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Event",  // Reference to the Event model
+        
+      }
+    ]
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`

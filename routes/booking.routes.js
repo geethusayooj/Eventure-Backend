@@ -19,19 +19,29 @@ router.post("/", isAuthenticated, (req, res, next) => {
       }
 
       // Create the booking (totalPrice is automatically calculated due to pre-save hook in Booking model)
-      return Booking.create({ userId, eventId, quantity });
-    })
-    .then((bookingFromDB) => {
-      res.status(201).json(bookingFromDB);
-    })
-    .catch((error) => {
-      next(error);
-      res.status(500).json({ error: "Failed to create booking" });
-    });
+      return Booking.create({ userId, eventId, quantity })
+      .then((bookingFromDB) => {
+        // Decrease the available tickets for the event
+        event.availableTickets -= quantity;
+
+        // Save the updated event with the reduced tickets
+        return event.save().then(() => {
+          // Send a response with the booking details
+          res.status(201).json(bookingFromDB);
+        });
+      });
+  })
+  .catch((error) => {
+    // Handle any errors
+    next(error);
+    res.status(500).json({ error: "Failed to create booking" });
+  });
 });
 // GET ALL BOOKINGS - GET /api/bookings
 router.get("/", isAuthenticated, (req, res, next) => {
   Booking.find()
+  .populate("userId", "name email")  
+  .populate("eventId", "title location price")
     .then((bookingsFromDB) => {
       res.status(200).json(bookingsFromDB);
     })
@@ -46,6 +56,7 @@ router.get("/:bookingId", isAuthenticated, (req, res, next) => {
   const { bookingId } = req.params;
 
   Booking.findById(bookingId)
+ 
     .then((bookingFromDB) => {
       res.status(200).json(bookingFromDB);
     })
@@ -100,14 +111,38 @@ router.put("/:bookingId", isAuthenticated, (req, res, next) => {
 router.delete("/:bookingId", isAuthenticated, (req, res, next) => {
   const { bookingId } = req.params;
 
-  Booking.findByIdAndDelete(bookingId)
-    .then(() => {
-      res.status(204).send();
+  // First, find the booking by ID
+  Booking.findById(bookingId)
+    .then((booking) => {
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+     
+      return Event.findById(booking.eventId)
+        .then((event) => {
+          if (!event) {
+            return res.status(404).json({ error: "Event not found" });
+          }
+
+          // Increase the available tickets by the quantity in the booking
+          event.availableTickets += booking.quantity;
+
+          // Save the updated event with the increased ticket count
+          return event.save().then(() => {
+            // Now, delete the booking
+            return Booking.findByIdAndDelete(bookingId);
+          });
+        })
+        .then(() => {
+          res.status(204).send();
+        });
     })
     .catch((error) => {
       next(error);
       res.status(500).json({ error: "Failed to delete booking" });
     });
 });
+
 
 module.exports = router;
