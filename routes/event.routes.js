@@ -1,8 +1,9 @@
+const { isAuthenticated } = require("../middleware/jwt.middleware.js");
 const router = require("express").Router();
 const Event = require("../models/Event.model");
 
 // CREATE EVENT - POST /api/events
-router.post("/", (req, res, next) => {
+router.post("/", isAuthenticated,  (req, res, next) => {
   const {
     title,
     description,
@@ -64,7 +65,7 @@ router.get("/:eventId", (req, res, next) => {
 
 
 // UPDATE EVENT - PUT /api/events/:eventId
-router.put("/:eventId", (req, res, next) => {
+router.put("/:eventId", isAuthenticated,  (req, res, next) => {
   const { eventId } = req.params;
   const updatedDetails = req.body;
   if (updatedDetails.availableTickets < 0) {
@@ -87,7 +88,7 @@ router.put("/:eventId", (req, res, next) => {
     });
 });
 // DELETE EVENT - DELETE /api/events/:eventId
-router.delete("/:eventId", (req, res, next) => {
+router.delete("/:eventId", isAuthenticated, (req, res, next) => {
   const { eventId } = req.params;
 
   Event.findByIdAndDelete(eventId)

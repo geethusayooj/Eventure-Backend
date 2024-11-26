@@ -10,4 +10,5 @@ router.get("/", (req, res, next) => {
 router.use("/events", eventRoutes);
 router.use("/bookings", bookingRoutes);
 
+
 module.exports = router;
